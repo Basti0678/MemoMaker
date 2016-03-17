@@ -66,7 +66,7 @@ public class NeuesMemoActivity extends AppCompatActivity{
 
         edit.putString("KEY_TEXT", text);
         edit.putString("KEY_DATE", textDate);
-        edit.commit();
+        edit.apply();
     }//Ende saveSettings
 
 
@@ -154,7 +154,7 @@ public class NeuesMemoActivity extends AppCompatActivity{
         }
     };
 
-
+/*
     public void createTable() {
 
         try {
@@ -163,12 +163,12 @@ public class NeuesMemoActivity extends AppCompatActivity{
                     "DATEMEMO DATE, PRIORITY CHAR, DESCRIPTION TEXT, ARCHIVE INTEGER);");
             mydb.close();
 
-            Toast.makeText(getApplicationContext(), "Erstellen erfolgreich", Toast.LENGTH_LONG).show();
+            //Toast.makeText(getApplicationContext(), "Erstellen erfolgreich", Toast.LENGTH_LONG).show();
         } catch(Exception e) {
             Toast.makeText(getApplicationContext(), "Fehler beim Erstellen der Datenbank", Toast.LENGTH_LONG).show();
         }
     }//Ende createTable
-
+*/
 
     public void inserIntoTable() {
         try {
@@ -187,13 +187,13 @@ public class NeuesMemoActivity extends AppCompatActivity{
             */
             mydb.close();
 
-            Toast.makeText(getApplicationContext(), "Speichern erfolgreich", Toast.LENGTH_LONG).show();
+            Toast.makeText(getApplicationContext(), "Eintrag gespeichert", Toast.LENGTH_LONG).show();
         } catch(Exception e) {
             Toast.makeText(getApplicationContext(), "Fehler beim Erstellen der Datenbank", Toast.LENGTH_LONG).show();
         }
     }//Ende insertIntoTable
 
-
+/*
     public void dropTable() {
         try {
             mydb = openOrCreateDatabase(DBMEMO, Context.MODE_PRIVATE, null);
@@ -206,13 +206,13 @@ public class NeuesMemoActivity extends AppCompatActivity{
             Toast.makeText(getApplicationContext(), "Fehler beim Loeschen der Datenbank", Toast.LENGTH_LONG).show();
         }
     }//Ende dropTable
-
+*/
 
     public void save (View v){
         saveSettings();
         inserIntoTable();
         finish();
-        Toast.makeText(getApplicationContext(), "Eintrag gespeichert", Toast.LENGTH_LONG).show();
+        //Toast.makeText(getApplicationContext(), "Eintrag gespeichert", Toast.LENGTH_LONG).show();
     }
 
 }

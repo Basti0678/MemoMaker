@@ -93,7 +93,7 @@ public class NeueTodoActivity extends AppCompatActivity{
         //dropTable();
 
         loadSettings();
-        createTable();
+       // createTable();
 
         editText.setOnClickListener(new View.OnClickListener() {
             @Override
@@ -105,7 +105,7 @@ public class NeueTodoActivity extends AppCompatActivity{
 
     }//Ende onCreate
 
-
+/*
     //DB
     public void createTable() {
         try {
@@ -114,12 +114,12 @@ public class NeueTodoActivity extends AppCompatActivity{
                     "DATEMEMO DATE, PRIORITY CHAR, DESCRIPTION TEXT, ARCHIVE INTEGER);");
             mydb.close();
 
-            Toast.makeText(getApplicationContext(), "Erstellen erfolgreich", Toast.LENGTH_LONG).show();
+            //Toast.makeText(getApplicationContext(), "Erstellen erfolgreich", Toast.LENGTH_LONG).show();
         } catch(Exception e) {
             Toast.makeText(getApplicationContext(), "Fehler beim Erstellen der Datenbank", Toast.LENGTH_LONG).show();
         }
     }//Ende createTable
-
+*/
 
     public void inserIntoTable() {
         try {
@@ -138,13 +138,13 @@ public class NeueTodoActivity extends AppCompatActivity{
             */
             mydb.close();
 
-            Toast.makeText(getApplicationContext(), "Speichern erfolgreich", Toast.LENGTH_LONG).show();
+            Toast.makeText(getApplicationContext(), "Eintrag gespeichert", Toast.LENGTH_LONG).show();
         } catch(Exception e) {
             Toast.makeText(getApplicationContext(), "Fehler beim Erstellen der Datenbank", Toast.LENGTH_LONG).show();
         }
     }//Ende instertIntoTable
 
-
+/*
     public void dropTable() {
         try {
             mydb = openOrCreateDatabase(DBMEMO, Context.MODE_PRIVATE, null);
@@ -157,13 +157,13 @@ public class NeueTodoActivity extends AppCompatActivity{
             Toast.makeText(getApplicationContext(), "Fehler beim Loeschen der Datenbank", Toast.LENGTH_LONG).show();
         }
     }//Ende dropTable
-
+*/
 
     public void save (View v){
         saveSettings();
         inserIntoTable();
         finish();
-        Toast.makeText(getApplicationContext(), "Eintrag gespeichert", Toast.LENGTH_LONG).show();
+        //Toast.makeText(getApplicationContext(), "Eintrag gespeichert", Toast.LENGTH_LONG).show();
     }
 
 }
