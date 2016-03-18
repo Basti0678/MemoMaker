@@ -16,8 +16,9 @@ import android.view.Menu;
 import android.view.MenuItem;
 import android.view.View;
 import android.widget.Toast;
-
 import com.getbase.floatingactionbutton.FloatingActionsMenu;
+
+
 
 import java.io.File;
 import java.util.Locale;
@@ -41,7 +42,8 @@ public class MainActivity extends AppCompatActivity {
     /**
      * The {@link ViewPager} that will host the section contents.
      */
-    private ViewPager mViewPager;
+    //private ViewPager mViewPager;
+    private CustomViewPager mViewPager;
 
 
 
@@ -55,7 +57,8 @@ public class MainActivity extends AppCompatActivity {
         mSectionsPagerAdapter = new SectionsPagerAdapter(getApplicationContext(),getSupportFragmentManager());
 
         // Set up the ViewPager with the sections adapter.
-        mViewPager = (ViewPager) findViewById(R.id.container);
+        //mViewPager = (ViewPager) findViewById(R.id.container);
+        mViewPager = (CustomViewPager) findViewById(R.id.container);
         mViewPager.setAdapter(mSectionsPagerAdapter);
 
         TabLayout tabLayout = (TabLayout) findViewById(R.id.tabs);
@@ -154,16 +157,21 @@ public class MainActivity extends AppCompatActivity {
 
     public void fab(View v){
 
+        FloatingActionsMenu fabm = null;
         switch (v.getId()){
 
             case R.id.addNewMemo:
                 Intent explicitIntentNeuesMemo = new Intent (this, NeuesMemoActivity.class);
                 startActivity(explicitIntentNeuesMemo);
+                fabm = (FloatingActionsMenu) findViewById(R.id.left_labels);
+                fabm.collapse();
                 break;
 
             case R.id.addNewTodo:
                 Intent explicitIntentNeueTodo = new Intent (this, NeueTodoActivity.class);
                 startActivity(explicitIntentNeueTodo);
+                fabm = (FloatingActionsMenu) findViewById(R.id.left_labels);
+                fabm.collapse();
                 break;
 
             default:

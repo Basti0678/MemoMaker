@@ -7,6 +7,7 @@ import android.widget.CheckBox;
  */
 public class ListViewItem {
     private int id;
+    private String itemType;
     private String katDat;
     private String itemName;
     private int archiveTag;
@@ -16,8 +17,9 @@ public class ListViewItem {
 
     }
 
-    public ListViewItem(int i, String kd, String in, int at) {
+    public ListViewItem(int i, String it, String kd, String in, int at) {
         this.id = i;
+        this.itemType = it;
         this.katDat = kd;
         this.itemName = in;
         this.archiveTag = at;
@@ -37,6 +39,10 @@ public class ListViewItem {
     }
     public String getName() {
         return itemName;
+    }
+
+    public String getItemType() {
+        return itemType;
     }
 
     public String getKatDat() {

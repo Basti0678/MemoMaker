@@ -14,11 +14,14 @@ import android.view.ViewGroup;
 import android.widget.ArrayAdapter;
 import android.widget.CheckBox;
 import android.widget.TextView;
+import android.widget.Toast;
 
 public class ItemAdapter extends ArrayAdapter<ListViewItem> {
 
     // declaring our ArrayList of items
     private ArrayList<ListViewItem> objects;
+   // private static boolean checkedItemExists = false;
+    //private static boolean actionModeActive = false;
 
     /* here we must override the constructor for ArrayAdapter
     * the only variable we care about now is ArrayList<ListViewItem> objects,
@@ -66,6 +69,7 @@ public class ItemAdapter extends ArrayAdapter<ListViewItem> {
             CheckBox bt = (CheckBox) v.findViewById(R.id.checkBox1);
 
 
+
             // check to see if each individual textview is null.
             // if not, assign some text!
             if (tid != null){
@@ -80,6 +84,29 @@ public class ItemAdapter extends ArrayAdapter<ListViewItem> {
             if (tat != null){
                 tat.setText(i.getArchiveTagToString());
             }
+            if (bt != null) {
+                if (i.getCheckbox()) {
+                    bt.setChecked(true);
+                }
+                else {
+                    bt.setChecked(false);
+                }
+/*
+                bt.setOnClickListener( new View.OnClickListener() {
+
+                    public void onClick(View v) {
+                        CheckBox cb = (CheckBox) v;
+
+                        Toast.makeText(getContext(),
+                                "Clicked on Checkbox: " + cb.getText() +
+                                        " is " + cb.isChecked(),
+                                Toast.LENGTH_LONG).show();
+                        //country.setSelected(cb.isChecked());
+                    }
+
+                });*/
+            }
+
 
         }
 
@@ -88,6 +115,8 @@ public class ItemAdapter extends ArrayAdapter<ListViewItem> {
 
     }
 
+
+/*
     //Additions
     private HashMap<Integer, Boolean> mSelection = new HashMap<Integer, Boolean>();
 
@@ -112,4 +141,18 @@ public class ItemAdapter extends ArrayAdapter<ListViewItem> {
     public void clearSelection() {
         mSelection = new HashMap<Integer, Boolean>();
     }
+
+    public static boolean getActionModeActive() {
+        return ItemAdapter.actionModeActive;
+    }
+    public static void setActionModeActive(boolean actionMode) {
+        ItemAdapter.actionModeActive = actionMode;
+    }
+    public static boolean getCheckedItemExists() {
+        return ItemAdapter.checkedItemExists;
+    }
+    public static void setCheckedItemExists(boolean cie) {
+        ItemAdapter.checkedItemExists = cie;
+    }
+    */
 }
