@@ -20,7 +20,7 @@
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:layout_alignParentLeft="true"
-        android:paddingTop="@dimen/activity_vertical_margin"
+        android:paddingTop="16dp"
         android:paddingRight="@dimen/activity_vertical_margin"
         android:textAppearance="?android:attr/textAppearanceMedium"
         android:text="" />
@@ -31,7 +31,7 @@
         android:layout_height="wrap_content"
         android:layout_toRightOf="@id/lb_katdat"
         android:paddingTop="@dimen/activity_vertical_margin"
-        android:paddingRight="@dimen/activity_vertical_margin"
+        android:paddingRight="32dp"
         android:textAppearance="?android:attr/textAppearanceMedium"
         android:text="Eintrag" />
 
@@ -41,8 +41,8 @@
         android:layout_height="wrap_content"
         android:layout_alignBaseline="@+id/lb_text1"
         android:layout_alignBottom="@+id/lb_text1"
-        android:paddingRight="@dimen/activity_horizontal_margin"
-        android:paddingTop="@dimen/activity_vertical_margin"
+        android:paddingRight="0dp"
+        android:paddingTop="16dp"
         android:layout_alignParentRight="true"
         android:focusable="false"
         android:focusableInTouchMode="false"

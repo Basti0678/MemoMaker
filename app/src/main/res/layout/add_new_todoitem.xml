@@ -39,17 +39,57 @@
         android:layout_width="wrap_content"
         android:singleLine="true"
         android:layout_gravity="start"
+        android:layout_marginTop="8dp"
+        android:layout_marginBottom="16dp"
         android:id="@+id/titletextTodoPrio"
         android:text="@string/todoprio"
         android:textAppearance="?android:attr/textAppearanceLarge"/>
 
-    <EditText
-        android:layout_height="wrap_content"
-        android:layout_width="wrap_content"
-        android:layout_marginBottom="30dp"
-        android:id="@+id/prio"
-        android:ems="2"
-        android:inputType="textCapCharacters"/>
+
+            <RadioGroup
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginBottom="30dp"
+                android:orientation="horizontal"
+                android:id="@+id/id_radio_group1"
+                android:checkedButton="@+id/radioButton1">
+
+                <RadioButton
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:paddingRight="32dp"
+                    android:text="A"
+                    android:textAppearance="?android:attr/textAppearanceLarge"
+                    android:id="@+id/radioButton1" />
+
+                <RadioButton
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:paddingRight="32dp"
+                    android:text="B"
+                    android:textAppearance="?android:attr/textAppearanceLarge"
+                    android:id="@+id/radioButton2" />
+
+                <RadioButton
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:paddingRight="32dp"
+                    android:text="C"
+                    android:textAppearance="?android:attr/textAppearanceLarge"
+                    android:id="@+id/radioButton3" />
+
+            </RadioGroup>
+
+            <TextView
+                android:layout_height="wrap_content"
+                android:layout_width="wrap_content"
+                android:singleLine="true"
+                android:layout_gravity="start"
+                android:layout_marginTop="8dp"
+                android:layout_marginBottom="16dp"
+                android:id="@+id/textTodoPrio"
+                android:text="@string/text"
+                android:textAppearance="?android:attr/textAppearanceLarge"/>
 
     <EditText
         android:layout_height="wrap_content"

@@ -64,22 +64,10 @@
 
 </activity>
 
-
-    <activity
-        android:theme="@style/AppTheme.NoActionBar"
-        android:screenOrientation="portrait"
-        android:name=".NeuanlageAuswahl">
-
-
-    <intent-filter>
-
-    <action android:name="android.intent.action.VIEW"/>
-
-    <category android:name="android.intent.category.LAUNCHER"/>
-
-</intent-filter>
-
-</activity>
+        <activity
+            android:name=".DialogActivity"
+            android:theme="@android:style/Theme.Holo.Light.Dialog">
+        </activity>
 
 </application>
 

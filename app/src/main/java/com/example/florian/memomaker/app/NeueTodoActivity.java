@@ -9,6 +9,8 @@ import android.view.View;
 import android.widget.Button;
 import android.widget.EditText;
 import android.support.v7.app.AppCompatActivity;
+import android.widget.RadioButton;
+import android.widget.RadioGroup;
 import android.widget.Toast;
 
 /**
@@ -21,21 +23,35 @@ public class NeueTodoActivity extends AppCompatActivity{
     private static String DBMEMO = "memomaker.db";
     private static String TABLE = "mmdata";
 
-    EditText prio;
-    private String textPrio;
     private String text;
     EditText editText;
+
+    RadioGroup radioPrioGroup;
+    RadioButton radioButtonA;
+    RadioButton radioButtonB;
+    RadioButton radioButtonC;
+
+    boolean checkedA;
+    boolean checkedB;
+    boolean checkedC;
+
     public static final String MY_PREFS_NAME = "InstantSaveTodo";
 
 
     private void updateProperties(){
-        // Priorität
-        prio =(EditText)findViewById(R.id.prio);
-        textPrio = prio.getText().toString();
 
         editText = (EditText)findViewById(R.id.newTodo);
-
         text = editText.getText().toString();
+
+        radioButtonA = (RadioButton)findViewById(R.id.radioButton1);
+        checkedA = radioButtonA.isChecked();
+
+        radioButtonB = (RadioButton)findViewById(R.id.radioButton2);
+        checkedB = radioButtonB.isChecked();
+
+        radioButtonC = (RadioButton)findViewById(R.id.radioButton3);
+        checkedC = radioButtonC.isChecked();
+
     }//Ende updateProperties
 
 
@@ -46,8 +62,12 @@ public class NeueTodoActivity extends AppCompatActivity{
         SharedPreferences.Editor edit = shared.edit();
 
         edit.putString("KEY_TEXT", text);
+
+        edit.putBoolean("PRIO_A", checkedA);
+        edit.putBoolean("PRIO_B", checkedB);
+        edit.putBoolean("PRIO_C", checkedC);
         //Datum
-        edit.putString("KEY_PRIO", textPrio);
+        //edit.putString("KEY_PRIO", textPrio);
         edit.commit();
     }//Ende saveSettings
 
@@ -57,14 +77,24 @@ public class NeueTodoActivity extends AppCompatActivity{
         SharedPreferences shared = getSharedPreferences(MY_PREFS_NAME,Context.MODE_PRIVATE);
         text = shared.getString("KEY_TEXT","");
 
-        //Datum
-        textPrio = shared.getString("KEY_PRIO","");
-        prio = (EditText) findViewById(R.id.prio);
-        prio.setText(textPrio);
+        checkedA =shared.getBoolean("PRIO_A", false);
+        checkedB =shared.getBoolean("PRIO_B", false);
+        checkedC =shared.getBoolean("PRIO_C", false);
+
+        if (checkedA) {
+            radioButtonA.setChecked(true);
+        }
+        else if (checkedB) {
+            radioButtonB.setChecked(true);
+        }
+        else {
+            radioButtonC.setChecked(true);
+        }
 
         editText = (EditText) findViewById(R.id.newTodo);
-
         editText.setText(text);
+
+
     }//Ende loadSettings
 
 
@@ -87,13 +117,14 @@ public class NeueTodoActivity extends AppCompatActivity{
         super.onCreate(saveInstanceState);
         setContentView(R.layout.add_new_todoitem);
 
-        EditText editText = (EditText) findViewById(R.id.newTodo);
+        editText = (EditText) findViewById(R.id.newTodo);
+        radioPrioGroup=(RadioGroup)findViewById(R.id.id_radio_group1);
 
-        // Test löschen DB
-        //dropTable();
+        radioButtonA = (RadioButton)findViewById(R.id.radioButton1);
+        radioButtonB = (RadioButton)findViewById(R.id.radioButton2);
+        radioButtonC = (RadioButton)findViewById(R.id.radioButton3);
 
         loadSettings();
-       // createTable();
 
         editText.setOnClickListener(new View.OnClickListener() {
             @Override
@@ -105,37 +136,12 @@ public class NeueTodoActivity extends AppCompatActivity{
 
     }//Ende onCreate
 
-/*
-    //DB
-    public void createTable() {
-        try {
-            mydb = openOrCreateDatabase(DBMEMO, Context.MODE_PRIVATE, null);
-            mydb.execSQL("CREATE TABLE IF NOT EXISTS " + TABLE + " (ID INTEGER PRIMARY KEY, TYPE TEXT, " +
-                    "DATEMEMO DATE, PRIORITY CHAR, DESCRIPTION TEXT, ARCHIVE INTEGER);");
-            mydb.close();
-
-            //Toast.makeText(getApplicationContext(), "Erstellen erfolgreich", Toast.LENGTH_LONG).show();
-        } catch(Exception e) {
-            Toast.makeText(getApplicationContext(), "Fehler beim Erstellen der Datenbank", Toast.LENGTH_LONG).show();
-        }
-    }//Ende createTable
-*/
-
-    public void inserIntoTable() {
+    public void insertIntoTable(char prio, String text) {
         try {
             mydb = openOrCreateDatabase(DBMEMO, Context.MODE_PRIVATE, null);
             mydb.execSQL("INSERT INTO " + TABLE + " (TYPE, DATEMEMO, PRIORITY, DESCRIPTION, ARCHIVE) " +
-                    "VALUES('todo', '' , '" + textPrio + "', '" + text + "', 0)");
-            /* Testdaten
-            mydb.execSQL("INSERT INTO " + TABLE + " (TYPE, DATEMEMO, PRIORITY, DESCRIPTION, ARCHIVE) " +
-                            "VALUES('todo', '' , 'A', 'Testtodo1',0)");
-            mydb.execSQL("INSERT INTO " + TABLE + " (TYPE, DATEMEMO, PRIORITY, DESCRIPTION, ARCHIVE) " +
-                    "VALUES('todo', '' , 'A', 'Testtodo2',0)");
-            mydb.execSQL("INSERT INTO " + TABLE + " (TYPE, DATEMEMO, PRIORITY, DESCRIPTION, ARCHIVE) " +
-                    "VALUES('todo', '' , 'A', 'Testtodo3',0)");
-            mydb.execSQL("INSERT INTO " + TABLE + " (TYPE, DATEMEMO, PRIORITY, DESCRIPTION, ARCHIVE) " +
-                    "VALUES('todo', '' , 'A', 'Testtodo4',0)");
-            */
+                    "VALUES('todo', '' , '" + prio + "', '" + text + "', 0)");
+
             mydb.close();
 
             Toast.makeText(getApplicationContext(), "Eintrag gespeichert", Toast.LENGTH_LONG).show();
@@ -144,26 +150,22 @@ public class NeueTodoActivity extends AppCompatActivity{
         }
     }//Ende instertIntoTable
 
-/*
-    public void dropTable() {
-        try {
-            mydb = openOrCreateDatabase(DBMEMO, Context.MODE_PRIVATE, null);
-            //String test = ("DROP " + TABLE);
-            mydb.execSQL("DROP TABLE " + TABLE);
-            mydb.close();
-
-            Toast.makeText(getApplicationContext(), "Loeschen erfolgreich", Toast.LENGTH_LONG).show();
-        } catch(Exception e) {
-            Toast.makeText(getApplicationContext(), "Fehler beim Loeschen der Datenbank", Toast.LENGTH_LONG).show();
-        }
-    }//Ende dropTable
-*/
-
     public void save (View v){
         saveSettings();
-        inserIntoTable();
+        char prio = ' ';
+
+        if (radioButtonA.isChecked()) {
+            prio = 'A';
+        }
+        else if (radioButtonB.isChecked()) {
+            prio = 'B';
+        }
+        else {
+            prio = 'C';
+        }
+
+        insertIntoTable(prio, text);
         finish();
-        //Toast.makeText(getApplicationContext(), "Eintrag gespeichert", Toast.LENGTH_LONG).show();
     }
 
 }

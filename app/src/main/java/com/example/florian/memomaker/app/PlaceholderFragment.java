@@ -1,32 +1,24 @@
 package com.example.florian.memomaker.app;
 
 
-import android.content.ClipData;
+
 import android.content.Context;
+import android.content.Intent;
 import android.database.Cursor;
 import android.database.sqlite.SQLiteDatabase;
 import android.os.Bundle;
 import android.support.v4.app.Fragment;
 import android.view.ActionMode;
-import android.util.Log;
-import android.view.ContextMenu;
 import android.view.LayoutInflater;
 import android.view.Menu;
 import android.view.MenuInflater;
 import android.view.MenuItem;
 import android.view.View;
 import android.view.ViewGroup;
-import android.widget.AbsListView;
 import android.widget.AdapterView;
-import android.widget.ArrayAdapter;
-import android.widget.CheckBox;
-import android.widget.CheckedTextView;
-import android.widget.CompoundButton;
 import android.widget.ListView;
 import android.widget.Toast;
-
 import com.getbase.floatingactionbutton.FloatingActionsMenu;
-
 import java.util.ArrayList;
 
 
@@ -41,37 +33,56 @@ public class PlaceholderFragment extends Fragment {
     ListView listViewmemo;
     ListView listViewArchivTodo;
     ListView listViewArchivMemo;
+
+    // Arraylists für Werte der Listviews
     ArrayList<ListViewItem> values;
     ArrayList<ListViewItem> valuesMemo;
     ArrayList<ListViewItem> archiveTodoArray;
     ArrayList<ListViewItem> archiveMemoArray;
-    //String[] values;
-    //String[] valuesMemo;
-    //String[] archiveTodoArray;
-    //String[] archiveMemoArray;
 
+    // SQL Variablen
     SQLiteDatabase mydb;
     private static String DBMEMO = "memomaker.db";
     private static String TABLE = "mmdata";
 
+    // Variable Tabnummer
     private static final String ARG_SECTION_NUMBER = "section_number";
 
-   // private static String[] longMenu1;
-
+    // Variable für Actionmode
     public ActionMode mActionMode;
-    //ActionMode.Callback mActionModeCallback;
-    //SelectionAdapter mAdapter;
+
+    // Adaptervariablen für CustomAdapter
     ItemAdapter adapter1;
     ItemAdapter adapter2;
     ItemAdapter adapter3;
     ItemAdapter adapter4;
 
+    // Customviewpager, ermöglicht deaktivieren von
+    // Blättern zwischen Tabs
     CustomViewPager customViewPager;
+
+    // Controllvariable um festzustellen ob bereits ein Eintrag im
+    // Actionmode angeklickt/markiert wurde
     public static boolean actionModeCheckedExists = false;
+
+    // Variable zum Zwischenspeichern der angeklickten Position, u.a.
+    // um die Markierung entfernen zu können wenn was neues angeklickt wurde
     public static int itemPosSave = -1;
-    // Fuer Section 3
+
+    // Fuer Section 3, zwischenspeichern des Itemtyps, da zwei
+    // Listviews mit verschiedenen Items
     public static String itemType;
 
+    // Flags zur bestimmung ob jeweils ein Eintrag in der anderen Listview
+    // angeklickt/markiert wurde. In diesem Fall wird eine Markierung in der
+    // aktuellen Listview nicht zugelassen. Workaround, da der Uncheck auf die
+    // andere Listview nicht sauber funktionierte
+    public static boolean lv1Activated = false;
+    public static boolean lv2Activated = false;
+
+    // Variable zum Zwischenspeichern der ID des zu löschenden Datensatzes
+    // da das Löschen aus der DB in der DialogActivity Klasse erfolgt
+    private static int delDatasetID = -1;
 
 
     public PlaceholderFragment() {
@@ -94,7 +105,6 @@ public class PlaceholderFragment extends Fragment {
     @Override
     public View onCreateView(LayoutInflater inflater, ViewGroup container, Bundle savedInstanceState) {
 
-        //View rootView = inflater.inflate(R.layout.fragment_archive, container, false);
         final View rootView = inflater.inflate(R.layout.fragment_todo, container, false);
         customViewPager = (CustomViewPager) getActivity().findViewById(R.id.container);
 
@@ -102,37 +112,49 @@ public class PlaceholderFragment extends Fragment {
         if(getArguments().getInt(ARG_SECTION_NUMBER) == 1){
 
             View todoView = inflater.inflate(R.layout.fragment_todo, container, false);
-
             listViewtodo = (ListView) todoView.findViewById(R.id.listViewTodo);
 
 
-            //Ladefunktion der Datenbank
+            //Laden der Daten für die aktuelle Listview aus der DB
             values = loadTodoData();
 
-
+            // Setzen des CustomAdapters
             adapter1 = new ItemAdapter(getContext(), R.layout.listview_row, values);
             listViewtodo.setAdapter(adapter1);
+
+            // Registrierung und setzen des Auswahlmodus
             registerForContextMenu(listViewtodo);
             listViewtodo.setChoiceMode(ListView.CHOICE_MODE_SINGLE);
 
+            // Listener für Click auf Listvieweintrag
             listViewtodo.setOnItemClickListener(new AdapterView.OnItemClickListener() {
                 @Override
                 public void onItemClick(AdapterView<?> arg0, View arg1,
                                         int pos, long id) {
+                    // Prüfen ob Actionmode aktiv, sonst nichts tun
                     if (mActionMode != null) {
                         ListViewItem lvi = (ListViewItem) listViewtodo.getItemAtPosition(pos);
 
+                        // Prüfen ob Checkbox angeclickt
                         if (lvi.getCheckbox()) {
+                            // Wenn checked, dann uncheck
                             lvi.setCheckbox(false);
+                            // Kontrollvariable und Zwischengespeicherte
+                            // Itemposition zurücksetzen
                             actionModeCheckedExists = false;
                             itemPosSave = -1;
                         } else {
+                            // Prüfen ob bereits ein Eintrag angeclickt/markiert wurde
                             if (!actionModeCheckedExists) {
+                                // Falls kein anderer Eintrag markiert ist, check ausführen,
+                                // Kontrollvariable auf true setzen und Position zwischenspeichern
                                 lvi.setCheckbox(true);
                                 actionModeCheckedExists = true;
                                 itemPosSave = pos;
                             } else {
-                                // Alte Position uncheck
+                                // Falls ein anderer Eintrag markiert ist, erst uncheck
+                                // auf alte Position, dann check auf die neue ausführen,
+                                // Kontrollvariable auf true setzen und Position zwischenspeichern
                                 ListViewItem lviOldPos = (ListViewItem) listViewtodo.getItemAtPosition(itemPosSave);
                                 lviOldPos.setCheckbox(false);
 
@@ -142,18 +164,12 @@ public class PlaceholderFragment extends Fragment {
                                 itemPosSave = pos;
                             }
                         }
-
-                        Toast.makeText(getActivity(), "Kurzer Click :) " + pos + " " + lvi.getName() + " " + itemPosSave, Toast.LENGTH_LONG).show();
-                        Log.v("long clicked", "pos: " + pos);
-                        // Start the CAB using the ActionMode.Callback defined above
                         listViewtodo.setItemChecked(pos, true);
-
                     }
-
                 }
             });
 
-            //Erste Version AdapterLongclikc
+            // Listener für LongClick auf Listvieweintrag
             listViewtodo.setOnItemLongClickListener(new AdapterView.OnItemLongClickListener() {
 
                 @Override
@@ -161,25 +177,36 @@ public class PlaceholderFragment extends Fragment {
                                                int pos, long id) {
                     // TODO Auto-generated method stub
 
-
+                    // Prüfen ob Actionmode bereits aktiv, falls ja
+                    // dann nichts tun
                     if (mActionMode != null) {
                         return false;
                     }
 
                     ListViewItem lvi = (ListViewItem) listViewtodo.getItemAtPosition(pos);
+
+                    // Prüfen ob Checkbox angeclickt
                     if (lvi.getCheckbox()) {
+                        // Wenn checked, dann uncheck
                         lvi.setCheckbox(false);
+                        // Kontrollvariable und Zwischengespeicherte
+                        // Itemposition zurücksetzen
                         actionModeCheckedExists = false;
                         itemPosSave = -1;
                     }
                     else {
+                        // Prüfen ob bereits ein Eintrag angeclickt/markiert wurde
                         if(!actionModeCheckedExists) {
+                            // Falls kein anderer Eintrag markiert ist, check ausführen,
+                            // Kontrollvariable auf true setzen und Position zwischenspeichern
                             lvi.setCheckbox(true);
                             actionModeCheckedExists = true;
                             itemPosSave = pos;
                         }
                         else {
-                            // Alte Position uncheck
+                            // Falls ein anderer Eintrag markiert ist, erst uncheck
+                            // auf alte Position, dann check auf die neue ausführen,
+                            // Kontrollvariable auf true setzen und Position zwischenspeichern
                             ListViewItem lviOldPos = (ListViewItem) listViewtodo.getItemAtPosition(itemPosSave);
                             lviOldPos.setCheckbox(false);
 
@@ -190,10 +217,8 @@ public class PlaceholderFragment extends Fragment {
                         }
                     }
 
-                    Toast.makeText(getActivity(), "Laaaaanger Click :) " + pos + " " + lvi.getName() + " " + itemPosSave, Toast.LENGTH_LONG).show();
-                    Log.v("long clicked", "pos: " + pos);
-                    // Start the CAB using the ActionMode.Callback defined above
                     listViewtodo.setItemChecked(pos, true);
+                    // Start des Actionmode
                     mActionMode = getActivity().startActionMode(mActionModeCallback);
 
                     return true;
@@ -209,35 +234,48 @@ public class PlaceholderFragment extends Fragment {
         if(getArguments().getInt(ARG_SECTION_NUMBER)== 2){
 
             View memoView = inflater.inflate(R.layout.fragment_memo, container, false);
-            //ListView initialisieren
             listViewmemo = (ListView) memoView.findViewById(R.id.listViewMemo);
 
-            // Ladefunktion der Datenbank
+            //Laden der Daten für die aktuelle Listview aus der DB
             valuesMemo = loadMemoData();
 
+            // Setzen des CustomAdapters
             adapter2 = new ItemAdapter(getContext(), R.layout.listview_row, valuesMemo);
             listViewmemo.setAdapter(adapter2);
+
+            // Registrierung und setzen des Auswahlmodus
             registerForContextMenu(listViewmemo);
             listViewmemo.setChoiceMode(ListView.CHOICE_MODE_SINGLE);
 
+            // Listener für Click auf Listvieweintrag
             listViewmemo.setOnItemClickListener(new AdapterView.OnItemClickListener() {
                 @Override
                 public void onItemClick(AdapterView<?> arg0, View arg1,
                                         int pos, long id) {
+                    // Prüfen ob Actionmode aktiv, sonst nichts tun
                     if (mActionMode != null) {
                         ListViewItem lvi = (ListViewItem) listViewmemo.getItemAtPosition(pos);
 
+                        // Prüfen ob Checkbox angeclickt
                         if (lvi.getCheckbox()) {
+                            // Wenn checked, dann uncheck
                             lvi.setCheckbox(false);
+                            // Kontrollvariable und Zwischengespeicherte
+                            // Itemposition zurücksetzen
                             actionModeCheckedExists = false;
                             itemPosSave = -1;
                         } else {
+                            // Prüfen ob bereits ein Eintrag angeclickt/markiert wurde
                             if (!actionModeCheckedExists) {
+                                // Falls kein anderer Eintrag markiert ist, check ausführen,
+                                // Kontrollvariable auf true setzen und Position zwischenspeichern
                                 lvi.setCheckbox(true);
                                 actionModeCheckedExists = true;
                                 itemPosSave = pos;
                             } else {
-                                // Alte Position uncheck
+                                // Falls ein anderer Eintrag markiert ist, erst uncheck
+                                // auf alte Position, dann check auf die neue ausführen,
+                                // Kontrollvariable auf true setzen und Position zwischenspeichern
                                 ListViewItem lviOldPos = (ListViewItem) listViewmemo.getItemAtPosition(itemPosSave);
                                 lviOldPos.setCheckbox(false);
 
@@ -247,18 +285,12 @@ public class PlaceholderFragment extends Fragment {
                                 itemPosSave = pos;
                             }
                         }
-
-                        Toast.makeText(getActivity(), "Kurzer Click :) " + pos + " " + lvi.getName() + " " + itemPosSave, Toast.LENGTH_LONG).show();
-                        Log.v("long clicked", "pos: " + pos);
-                        // Start the CAB using the ActionMode.Callback defined above
                         listViewmemo.setItemChecked(pos, true);
-
                     }
-
                 }
             });
 
-            //Erste Version AdapterLongclikc
+            // Listener für LongClick auf Listvieweintrag
             listViewmemo.setOnItemLongClickListener(new AdapterView.OnItemLongClickListener() {
 
                 @Override
@@ -266,23 +298,33 @@ public class PlaceholderFragment extends Fragment {
                                                int pos, long id) {
                     // TODO Auto-generated method stub
 
-
+                    // Prüfen ob Actionmode bereits aktiv, falls ja
+                    // dann nichts tun
                     if (mActionMode != null) {
                         return false;
                     }
-
                     ListViewItem lvi = (ListViewItem) listViewmemo.getItemAtPosition(pos);
+
+                    // Prüfen ob Checkbox angeclickt
                     if (lvi.getCheckbox()) {
+                        // Wenn checked, dann uncheck
                         lvi.setCheckbox(false);
+                        // Kontrollvariable und Zwischengespeicherte
+                        // Itemposition zurücksetzen
                         actionModeCheckedExists = false;
                         itemPosSave = -1;
                     } else {
+                        // Prüfen ob bereits ein Eintrag angeclickt/markiert wurde
                         if (!actionModeCheckedExists) {
+                            // Falls kein anderer Eintrag markiert ist, check ausführen,
+                            // Kontrollvariable auf true setzen und Position zwischenspeichern
                             lvi.setCheckbox(true);
                             actionModeCheckedExists = true;
                             itemPosSave = pos;
                         } else {
-                            // Alte Position uncheck
+                            // Falls ein anderer Eintrag markiert ist, erst uncheck
+                            // auf alte Position, dann check auf die neue ausführen,
+                            // Kontrollvariable auf true setzen und Position zwischenspeichern
                             ListViewItem lviOldPos = (ListViewItem) listViewmemo.getItemAtPosition(itemPosSave);
                             lviOldPos.setCheckbox(false);
 
@@ -292,18 +334,14 @@ public class PlaceholderFragment extends Fragment {
                             itemPosSave = pos;
                         }
                     }
-
-                    Toast.makeText(getActivity(), "Laaaaanger Click :) " + pos + " " + lvi.getName() + " " + itemPosSave, Toast.LENGTH_LONG).show();
-                    Log.v("long clicked", "pos: " + pos);
-                    // Start the CAB using the ActionMode.Callback defined above
                     listViewmemo.setItemChecked(pos, true);
+
+                    // Start des Actionmode
                     mActionMode = getActivity().startActionMode(mActionModeCallback);
 
                     return true;
-
                 }
             });
-
 
             return memoView;
         }//Ende If MEMO List-View
@@ -312,59 +350,76 @@ public class PlaceholderFragment extends Fragment {
 
             View archiveView = inflater.inflate(R.layout.fragment_archive, container, false);
 
-            //ListView initialisieren
+            //ListViews initialisieren
             listViewArchivTodo = (ListView)archiveView.findViewById(R.id.listViewTodoArchive);
             listViewArchivMemo = (ListView)archiveView.findViewById(R.id.listViewMemoArchiv);
 
             // Routinen fuer erste Listview
+            //Laden der Daten für die aktuelle Listview aus der DB
             archiveTodoArray = loadTodoDataArchive();
+
+            // Setzen des CustomAdapters
             adapter3 = new ItemAdapter(getContext(), R.layout.listview_row, archiveTodoArray);
             listViewArchivTodo.setAdapter(adapter3);
+
+            // Registrierung und setzen des Auswahlmodus
             registerForContextMenu(listViewArchivTodo);
             listViewArchivTodo.setChoiceMode(ListView.CHOICE_MODE_SINGLE);
 
+            // Listener für Click auf Listvieweintrag
             listViewArchivTodo.setOnItemClickListener(new AdapterView.OnItemClickListener() {
                 @Override
                 public void onItemClick(AdapterView<?> arg0, View arg1,
                                         int pos, long id) {
-                    if (mActionMode != null) {
+                    // Prüfen ob Actionmode aktiv und andere Listview
+                    // nicht aktiv, sonst nichts tun
+                    if (mActionMode != null && !lv2Activated) {
+                        
                         ListViewItem lvi = (ListViewItem) listViewArchivTodo.getItemAtPosition(pos);
 
+                        // Prüfen ob Checkbox unchecked
                         if (!lvi.getCheckbox()) {
+                            // Wenn unchecked, dann check
                             lvi.setCheckbox(true);
+                            // Kontrollvariablen und Zwischengespeicherte
+                            // Itemposition und Itemtyp zurücksetzen
                             actionModeCheckedExists = false;
+                            lv1Activated = false;
                             itemPosSave = -1;
                             itemType = null;
                         } else {
+                            // Prüfen ob bereits ein Eintrag angeclickt/markiert wurde
                             if (!actionModeCheckedExists) {
+                                // Falls kein anderer Eintrag markiert ist, uncheck ausführen,
+                                // Kontrollvariablen auf true setzen, Position und
+                                // Itemtyp zwischenspeichern
                                 lvi.setCheckbox(false);
                                 actionModeCheckedExists = true;
+                                lv1Activated = true;
                                 itemPosSave = pos;
                                 itemType = lvi.getItemType();
                             } else {
-                                // Alte Position uncheck
+                                // Falls ein anderer Eintrag markiert ist, erst check
+                                // auf alte Position, dann uncheck auf die neue ausführen,
+                                // Kontrollvariablen auf true setzen, Itemtyp und
+                                // Position zwischenspeichern
                                 ListViewItem lviOldPos = (ListViewItem) listViewArchivTodo.getItemAtPosition(itemPosSave);
                                 lviOldPos.setCheckbox(true);
 
-                                // Aktuelle Position check
+                                // Aktuelle Position uncheck
                                 lvi.setCheckbox(false);
                                 actionModeCheckedExists = true;
+                                lv1Activated = true;
                                 itemPosSave = pos;
                                 itemType = lvi.getItemType();
                             }
                         }
-
-                        Toast.makeText(getActivity(), "Kurzer Click :) " + pos + " " + lvi.getName() + " " + itemPosSave, Toast.LENGTH_LONG).show();
-                        Log.v("long clicked", "pos: " + pos);
-                        // Start the CAB using the ActionMode.Callback defined above
                         listViewArchivTodo.setItemChecked(pos, true);
-
                     }
-
                 }
             });
 
-            //Erste Version AdapterLongclikc
+            // Listener für LongClick auf Listvieweintrag
             listViewArchivTodo.setOnItemLongClickListener(new AdapterView.OnItemLongClickListener() {
 
                 @Override
@@ -372,96 +427,126 @@ public class PlaceholderFragment extends Fragment {
                                                int pos, long id) {
                     // TODO Auto-generated method stub
 
-
+                    // Prüfen ob Actionmode bereits aktiv, falls ja
+                    // dann nichts tun
                     if (mActionMode != null) {
                         return false;
                     }
-
+                    
                     ListViewItem lvi = (ListViewItem) listViewArchivTodo.getItemAtPosition(pos);
+
+                    // Prüfen ob Checkbox unchecked
                     if (!lvi.getCheckbox()) {
+                        // Wenn unchecked, dann check
                         lvi.setCheckbox(true);
+                        // Kontrollvariablen und Zwischengespeicherte
+                        // Itemposition und Itemtyp zurücksetzen
                         actionModeCheckedExists = false;
+                        lv1Activated = false;
                         itemPosSave = -1;
                         itemType = null;
                     } else {
+                        // Prüfen ob bereits ein Eintrag angeclickt/markiert wurde
                         if (!actionModeCheckedExists) {
+                            // Falls kein anderer Eintrag markiert ist, uncheck ausführen,
+                            // Kontrollvariablen auf true setzen, Position und
+                            // Itemtyp zwischenspeichern
                             lvi.setCheckbox(false);
                             actionModeCheckedExists = true;
+                            lv1Activated = true;
                             itemPosSave = pos;
                             itemType = lvi.getItemType();
                         } else {
-                            // Alte Position uncheck
+                            // Falls ein anderer Eintrag markiert ist, erst check
+                            // auf alte Position, dann uncheck auf die neue ausführen,
+                            // Kontrollvariablen auf true setzen, Itemtyp und
+                            // Position zwischenspeichern
                             ListViewItem lviOldPos = (ListViewItem) listViewArchivTodo.getItemAtPosition(itemPosSave);
                             lviOldPos.setCheckbox(true);
 
-                            // Aktuelle Position check
+                            // Aktuelle Position uncheck
                             lvi.setCheckbox(false);
                             actionModeCheckedExists = true;
+                            lv1Activated = true;
                             itemPosSave = pos;
                             itemType = lvi.getItemType();
                         }
                     }
-
-                    Toast.makeText(getActivity(), "Laaaaanger Click :) " + pos + " " + lvi.getName() + " " + itemPosSave, Toast.LENGTH_LONG).show();
-                    Log.v("long clicked", "pos: " + pos);
-                    // Start the CAB using the ActionMode.Callback defined above
                     listViewArchivTodo.setItemChecked(pos, true);
+                    // Start des Actionmode
                     mActionMode = getActivity().startActionMode(mActionModeCallback);
 
                     return true;
-
                 }
             });
 
             // Routinen fuer zweite Listview
+            //Laden der Daten für die aktuelle Listview aus der DB
             archiveMemoArray = loadMemoDataArchive();
+
+            // Setzen des CustomAdapters
             adapter4 = new ItemAdapter(getContext(), R.layout.listview_row, archiveMemoArray);
             listViewArchivMemo.setAdapter(adapter4);
+
+            // Registrierung und setzen des Auswahlmodus
             registerForContextMenu(listViewArchivMemo);
             listViewArchivMemo.setChoiceMode(ListView.CHOICE_MODE_SINGLE);
 
+            // Listener für Click auf Listvieweintrag
             listViewArchivMemo.setOnItemClickListener(new AdapterView.OnItemClickListener() {
                 @Override
                 public void onItemClick(AdapterView<?> arg0, View arg1,
                                         int pos, long id) {
-                    if (mActionMode != null) {
+
+                    // Prüfen ob Actionmode aktiv und andere Listview
+                    // nicht aktiv, sonst nichts tun
+                    if (mActionMode != null  && !lv1Activated) {
+
                         ListViewItem lvi = (ListViewItem) listViewArchivMemo.getItemAtPosition(pos);
 
+                        // Prüfen ob Checkbox unchecked
                         if (!lvi.getCheckbox()) {
+                            // Wenn unchecked, dann check
                             lvi.setCheckbox(true);
+                            // Kontrollvariablen und Zwischengespeicherte
+                            // Itemposition und Itemtyp zurücksetzen
                             actionModeCheckedExists = false;
+                            lv2Activated = false;
                             itemPosSave = -1;
                             itemType = null;
                         } else {
+                            // Prüfen ob bereits ein Eintrag angeclickt/markiert wurde
                             if (!actionModeCheckedExists) {
+                                // Falls kein anderer Eintrag markiert ist, uncheck ausführen,
+                                // Kontrollvariablen auf true setzen, Position und
+                                // Itemtyp zwischenspeichern
                                 lvi.setCheckbox(false);
                                 actionModeCheckedExists = true;
+                                lv2Activated = true;
                                 itemPosSave = pos;
                                 itemType = lvi.getItemType();
                             } else {
-                                // Alte Position uncheck
+                                // Falls ein anderer Eintrag markiert ist, erst check
+                                // auf alte Position, dann uncheck auf die neue ausführen,
+                                // Kontrollvariablen auf true setzen, Itemtyp und
+                                // Position zwischenspeichern
                                 ListViewItem lviOldPos = (ListViewItem) listViewArchivMemo.getItemAtPosition(itemPosSave);
                                 lviOldPos.setCheckbox(true);
 
-                                // Aktuelle Position check
+                                // Aktuelle Position uncheck
                                 lvi.setCheckbox(false);
                                 actionModeCheckedExists = true;
+                                lv2Activated = true;
                                 itemPosSave = pos;
                                 itemType = lvi.getItemType();
                             }
                         }
-
-                        Toast.makeText(getActivity(), "Kurzer Click :) " + pos + " " + lvi.getName() + " " + itemPosSave, Toast.LENGTH_LONG).show();
-                        Log.v("long clicked", "pos: " + pos);
-                        // Start the CAB using the ActionMode.Callback defined above
                         listViewArchivMemo.setItemChecked(pos, true);
-
                     }
-
                 }
             });
 
-            //Erste Version AdapterLongclikc
+            // Listener für LongClick auf Listvieweintrag
             listViewArchivMemo.setOnItemLongClickListener(new AdapterView.OnItemLongClickListener() {
 
                 @Override
@@ -469,47 +554,57 @@ public class PlaceholderFragment extends Fragment {
                                                int pos, long id) {
                     // TODO Auto-generated method stub
 
-
+                    // Prüfen ob Actionmode bereits aktiv, falls ja
+                    // dann nichts tun
                     if (mActionMode != null) {
                         return false;
                     }
 
                     ListViewItem lvi = (ListViewItem) listViewArchivMemo.getItemAtPosition(pos);
+
+                    // Prüfen ob Checkbox unchecked
                     if (!lvi.getCheckbox()) {
+                        // Wenn unchecked, dann check
                         lvi.setCheckbox(true);
+                        // Kontrollvariablen und Zwischengespeicherte
+                        // Itemposition und Itemtyp zurücksetzen
                         actionModeCheckedExists = false;
+                        lv2Activated = false;
                         itemPosSave = -1;
                         itemType = null;
                     } else {
+                        // Prüfen ob bereits ein Eintrag angeclickt/markiert wurde
                         if (!actionModeCheckedExists) {
+                            // Falls kein anderer Eintrag markiert ist, uncheck ausführen,
+                            // Kontrollvariablen auf true setzen, Position und
+                            // Itemtyp zwischenspeichern
                             lvi.setCheckbox(false);
                             actionModeCheckedExists = true;
+                            lv2Activated = true;
                             itemPosSave = pos;
                             itemType = lvi.getItemType();
                         } else {
-                            // Alte Position uncheck
+                            // Falls ein anderer Eintrag markiert ist, erst check
+                            // auf alte Position, dann uncheck auf die neue ausführen,
+                            // Kontrollvariablen auf true setzen, Itemtyp und
+                            // Position zwischenspeichern
                             ListViewItem lviOldPos = (ListViewItem) listViewArchivMemo.getItemAtPosition(itemPosSave);
                             lviOldPos.setCheckbox(true);
 
-                            // Aktuelle Position check
+                            // Aktuelle Position uncheck
                             lvi.setCheckbox(false);
                             actionModeCheckedExists = true;
+                            lv2Activated = true;
                             itemPosSave = pos;
                             itemType = lvi.getItemType();
                         }
                     }
-
-                    Toast.makeText(getActivity(), "Laaaaanger Click :) " + pos + " " + lvi.getName() + " " + itemPosSave, Toast.LENGTH_LONG).show();
-                    Log.v("long clicked", "pos: " + pos);
-                    // Start the CAB using the ActionMode.Callback defined above
                     listViewArchivMemo.setItemChecked(pos, true);
                     mActionMode = getActivity().startActionMode(mActionModeCallback);
 
                     return true;
-
                 }
             });
-
 
             return archiveView;
         }//Ende If ARCHIVE List-View
@@ -542,25 +637,23 @@ public class PlaceholderFragment extends Fragment {
             Integer cindex1 = allrows.getColumnIndex("PRIORITY");
             Integer cindex2 = allrows.getColumnIndex("DESCRIPTION");
             Integer cindex3 = allrows.getColumnIndex("ARCHIVE");
-            //tdData = new ListViewItem[allrows.getCount()];
 
+            //Arraylist mit Daten füllen
             if(allrows.moveToFirst()) {
                 int i = 0;
                 do {
-                    //tdData[i] = allrows.getString(cindex) + " " + allrows.getString(cindex1);
                     tdData.add(new ListViewItem(allrows.getInt(cindex), allrows.getString(cindex0), allrows.getString(cindex1),
                             allrows.getString(cindex2), allrows.getInt(cindex3)));
                     i++;
                 } while (allrows.moveToNext());
-                //Test
-                //Toast.makeText(getActivity().getApplicationContext(), "geladen", Toast.LENGTH_LONG).show();
+
             }
             allrows.close();
             mydb.close();
 
         } catch (Exception e) {
             Toast.makeText(getActivity().getApplicationContext(), "Fehler beim Lesen der Datenbank", Toast.LENGTH_LONG).show();
-            //tdData = new ListViewItem[0];
+
         }
         return tdData;
     }//Ende loadTodoData
@@ -578,6 +671,7 @@ public class PlaceholderFragment extends Fragment {
             Integer cindex2 = allrows.getColumnIndex("DESCRIPTION");
             Integer cindex3 = allrows.getColumnIndex("ARCHIVE");
 
+            //Arraylist mit Daten füllen
             if(allrows.moveToFirst()) {
                 int i = 0;
                 do {
@@ -585,15 +679,14 @@ public class PlaceholderFragment extends Fragment {
                             allrows.getString(cindex2), allrows.getInt(cindex3)));
                     i++;
                 } while (allrows.moveToNext());
-                //Test
-                //Toast.makeText(getActivity().getApplicationContext(), "geladen", Toast.LENGTH_LONG).show();
+
             }
             allrows.close();
             mydb.close();
 
         } catch (Exception e) {
             Toast.makeText(getActivity().getApplicationContext(), "Fehler beim Lesen der Datenbank", Toast.LENGTH_LONG).show();
-            //mmData = new String[0];
+
         }
         return mmData;
     }//Ende loadMemoData
@@ -610,25 +703,23 @@ public class PlaceholderFragment extends Fragment {
             Integer cindex1 = allrows.getColumnIndex("PRIORITY");
             Integer cindex2 = allrows.getColumnIndex("DESCRIPTION");
             Integer cindex3 = allrows.getColumnIndex("ARCHIVE");
-            //tdData = new ListViewItem[allrows.getCount()];
 
+            //Arraylist mit Daten füllen
             if(allrows.moveToFirst()) {
                 int i = 0;
                 do {
-                    //tdData[i] = allrows.getString(cindex) + " " + allrows.getString(cindex1);
                     tdData.add(new ListViewItem(allrows.getInt(cindex), allrows.getString(cindex0), allrows.getString(cindex1),
                             allrows.getString(cindex2), allrows.getInt(cindex3)));
                     i++;
                 } while (allrows.moveToNext());
-                //Test
-                //Toast.makeText(getActivity().getApplicationContext(), "geladen", Toast.LENGTH_LONG).show();
+
             }
             allrows.close();
             mydb.close();
 
         } catch (Exception e) {
             Toast.makeText(getActivity().getApplicationContext(), "Fehler beim Lesen der Datenbank", Toast.LENGTH_LONG).show();
-            //tdData = new ListViewItem[0];
+
         }
         return tdData;
     }//Ende loadTodoDataArchiv
@@ -646,6 +737,7 @@ public class PlaceholderFragment extends Fragment {
             Integer cindex2 = allrows.getColumnIndex("DESCRIPTION");
             Integer cindex3 = allrows.getColumnIndex("ARCHIVE");
 
+            //Arraylist mit Daten füllen
             if(allrows.moveToFirst()) {
                 int i = 0;
                 do {
@@ -653,19 +745,20 @@ public class PlaceholderFragment extends Fragment {
                             allrows.getString(cindex2), allrows.getInt(cindex3)));
                     i++;
                 } while (allrows.moveToNext());
-                //Test
-                //Toast.makeText(getActivity().getApplicationContext(), "geladen", Toast.LENGTH_LONG).show();
+
             }
             allrows.close();
             mydb.close();
 
         } catch (Exception e) {
             Toast.makeText(getActivity().getApplicationContext(), "Fehler beim Lesen der Datenbank", Toast.LENGTH_LONG).show();
-            //mmData = new String[0];
+
         }
         return mmData;
     }//Ende loadMemoDataArchiv
 
+    // Funktion zum aktualisieren der Views nach Neuanlage,
+    // Verschieben oder Löschen. Wird im onResume() aufgerufen
     @Override
     public void setMenuVisibility (final boolean visible){
         super.setMenuVisibility(visible);
@@ -675,8 +768,7 @@ public class PlaceholderFragment extends Fragment {
             if (visible) {
                 if (getArguments().getInt(ARG_SECTION_NUMBER) == 1) {
                     values = loadTodoData();
-                    //ArrayAdapter<String> adapter1 = new ArrayAdapter<>(getContext(), R.layout.listview_row,
-                    //        android.R.id.text1, values);
+
                     adapter1 = new ItemAdapter(getContext(), R.layout.listview_row, values);
                     listViewtodo.setAdapter(adapter1);
                 }
@@ -685,10 +777,7 @@ public class PlaceholderFragment extends Fragment {
             if (visible) {
                 if (getArguments().getInt(ARG_SECTION_NUMBER) == 2) {
                     valuesMemo = loadMemoData();
-                    /*
-                    ArrayAdapter<String> adapter2 = new ArrayAdapter<>(getContext(), android.R.layout.simple_list_item_1,
-                            android.R.id.text1, valuesMemo);
-                            */
+
                     adapter2 = new ItemAdapter(getContext(), R.layout.listview_row, valuesMemo);
                     listViewmemo.setAdapter(adapter2);
                 }
@@ -707,7 +796,6 @@ public class PlaceholderFragment extends Fragment {
 
                 }
             }
-
         }
     }
 
@@ -724,12 +812,19 @@ public class PlaceholderFragment extends Fragment {
             // Inflate a menu resource providing context menu items
             MenuInflater inflater = mode.getMenuInflater();
             inflater.inflate(R.menu.menu_delete1, menu);
+
+            // Blättern im Actionmode verhindern
             customViewPager.setPagingEnabled(false);
+
+            // Löschicon nur im Archiv Actionmode anzeigen
             if ((getArguments().getInt(ARG_SECTION_NUMBER) == 1) || (getArguments().getInt(ARG_SECTION_NUMBER) == 2)){
                 menu.findItem(R.id.delete_selected).setVisible(false);
             }
+
+            // Floatingactionbutton ausblenden im Actionmode
             FloatingActionsMenu fabm = (FloatingActionsMenu) getActivity().findViewById(R.id.left_labels);
             fabm.setVisibility(View.INVISIBLE);
+
             return true;
         }
 
@@ -745,14 +840,42 @@ public class PlaceholderFragment extends Fragment {
         public boolean onActionItemClicked(ActionMode mode, MenuItem item) {
             switch (item.getItemId()) {
                 case R.id.delete_selected:
-                    Toast.makeText(getActivity().getApplicationContext(), "Hier kommt es", Toast.LENGTH_LONG).show();
+                        if (getArguments().getInt(ARG_SECTION_NUMBER) == 3) {
+                            ListViewItem lviPos = null;
+                            if (itemType.equals("todo")) {
+                                lviPos = (ListViewItem) listViewArchivTodo.getItemAtPosition(itemPosSave);
+                                if (lviPos.getCheckbox()) {
+                                    lviPos.setArchiveTag(1);
+                                } else {
+                                    lviPos.setArchiveTag(0);
+                                }
+                            } else {
+                                lviPos = (ListViewItem) listViewArchivMemo.getItemAtPosition(itemPosSave);
+                                if (lviPos.getCheckbox()) {
+                                    lviPos.setArchiveTag(1);
+                                } else {
+                                    lviPos.setArchiveTag(0);
+                                }
+                            }
+
+                            // Zu löschenden Datensatz zwischenspeichern
+                            PlaceholderFragment.delDatasetID = lviPos.getId();
+
+                            // Löschbestätigunsdialog einblenden
+                            confirmDeleteDs();
+
+                        }
+
+
                     mode.finish(); // Action picked, so close the CAB
                     return true;
+
                 case R.id.move_selected:
-                    //Toast.makeText(getActivity().getApplicationContext(), "Hier kommt es wieder", Toast.LENGTH_LONG).show();
                     if (itemPosSave != -1) {
-                        //ListViewItem lviPos = (ListViewItem) listViewtodo.getItemAtPosition(itemPosSave);
                         ListViewItem lviPos = null;
+                        // Holen des Checked Status für die Checkboxes
+                        // abhängig von Section und setzen der Archivtags
+                        // für die Datenbank
                         if (getArguments().getInt(ARG_SECTION_NUMBER) == 1) {
                             lviPos = (ListViewItem) listViewtodo.getItemAtPosition(itemPosSave);
                             if (lviPos.getCheckbox()) {
@@ -771,6 +894,7 @@ public class PlaceholderFragment extends Fragment {
                                 lviPos.setArchiveTag(0);
                             }
                         }
+                        // Hier zwei Listviews, von daher nochmal Unterscheidung
                         if (getArguments().getInt(ARG_SECTION_NUMBER) == 3) {
                             if (itemType.equals("todo")) {
                                 lviPos = (ListViewItem) listViewArchivTodo.getItemAtPosition(itemPosSave);
@@ -790,9 +914,8 @@ public class PlaceholderFragment extends Fragment {
                                     lviPos.setArchiveTag(0);
                                 }
                             }
-                            //itemType = null;
-
                         }
+
                         if (lviPos != null) {
                             if (lviPos.getCheckbox()) {
                                 lviPos.setArchiveTag(1);
@@ -801,7 +924,6 @@ public class PlaceholderFragment extends Fragment {
                             }
                             updateTable(lviPos.getId(), lviPos.getArchiveTag());
                         }
-
                     }
                     mode.finish(); // Action picked, so close the CAB
                     return true;
@@ -836,44 +958,62 @@ public class PlaceholderFragment extends Fragment {
                     }
                     itemType = null;
 
+
                 }
 
 
             }
+            // Blättern zwischen Tabs wieder erlauben
             customViewPager.setPagingEnabled(true);
+            // Floatingactionbutton wieder sichtbar machen
             FloatingActionsMenu fabm = (FloatingActionsMenu) getActivity().findViewById(R.id.left_labels);
             fabm.setVisibility(View.VISIBLE);
+
+            // Actionmode, Kontrollvariablen und Position zurücksetzen
             mActionMode = null;
             actionModeCheckedExists = false;
-            Toast.makeText(getActivity(), "Var. ItemSavePos) "  + itemPosSave, Toast.LENGTH_LONG).show();
-            //ItemAdapter.setActionModeActive(false);
+            lv1Activated = false;
+            lv2Activated = false;
             itemPosSave = -1;
+
+            // Manuelles refresh nach Verschieben
             setMenuVisibility(true);
         }
-
-
     };
 
      //Ende ActionMode
 
-    //public void updateTable(int id, String type, String datePrio, String description, int arch) {
+
     public void updateTable(int id, int arch) {
         try {
             mydb = getActivity().openOrCreateDatabase(DBMEMO, Context.MODE_PRIVATE, null);
-            //if (type.equals("todo")) {
-                mydb.execSQL("UPDATE " + TABLE + " SET ARCHIVE = " + arch + " WHERE ID = " +id);
-            //}
-            //else {
-            //    mydb.execSQL("INSERT INTO " + TABLE + " (TYPE, DATEMEMO, PRIORITY, DESCRIPTION, ARCHIVE) " +
-            //            "VALUES('memo', '' , '" + "prio" + "', '" + "text" + "', 0)");
-            //}
-
+            mydb.execSQL("UPDATE " + TABLE + " SET ARCHIVE = " + arch + " WHERE ID = " +id);
             mydb.close();
 
-            Toast.makeText(getContext(), "Update erfolgreich", Toast.LENGTH_LONG).show();
+            if (getArguments().getInt(ARG_SECTION_NUMBER) == 3) {
+                Toast.makeText(getContext(), "Datensatz wiederhergestellt", Toast.LENGTH_LONG).show();
+            }
+            else {
+                Toast.makeText(getContext(), "Ins Archiv verschoben", Toast.LENGTH_LONG).show();
+            }
+
         } catch(Exception e) {
             Toast.makeText(getContext(), "Fehler beim Schreiben in die Datenbank", Toast.LENGTH_LONG).show();
         }
-    }//Ende instertIntoTable
+    }//Ende updateTable
+
+     public void confirmDeleteDs() {
+         // DialogActivity starten um Löschvorgang zu bestätigen
+        Intent i = new Intent(getActivity(), DialogActivity.class);
+        startActivity(i);
+
+     }
+
+    public static int getDelDatasetID() {
+        return PlaceholderFragment.delDatasetID;
+    }
+    public static void setDelDatasetID(int id) {
+        PlaceholderFragment.delDatasetID = id;
+    }
 
 }
